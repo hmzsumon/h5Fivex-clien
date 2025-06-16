@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useSelector } from 'react-redux';
-import baseUrl from '@/config/baseUrl';
+import socketUrl from '@/config/socketUrl'; // ✅ Use dedicated socket URL
 import { SocketUser } from '@/types';
 
 interface iSocketContextType {
@@ -28,7 +28,7 @@ export const SocketContextProvider = ({
 		if (!user || !user._id) return;
 
 		// ✅ No token passed
-		const newSocket = io(baseUrl, {
+		const newSocket = io(socketUrl, {
 			transports: ['websocket'],
 		});
 
