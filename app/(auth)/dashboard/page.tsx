@@ -10,7 +10,7 @@ import DashboardModal from '@/components/ui/home/dashboardmodel';
 import { useLoadUserQuery } from '@/redux/features/auth/authApi';
 
 const DashboardPage = () => {
-	const { data, error } = useLoadUserQuery();
+	// const { data, error } = useLoadUserQuery();
 
 	return (
 		<div>
