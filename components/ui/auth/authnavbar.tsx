@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { Bell } from 'lucide-react';
+import Logo from '@/public/home/logo.png';
 
 const AuthNavbar = () => {
 	return (
@@ -11,15 +12,10 @@ const AuthNavbar = () => {
 				{/* Logo and Name - Tightly grouped */}
 				<div className='flex items-center gap-1.5 md:gap-2'>
 					<Image
-						src='/home/logo.png'
+						src={Logo}
 						alt='h5Fivex Logo'
-						width={50}
-						height={40}
 						className='w-auto h-[30px] md:h-[40px]'
 					/>
-					<span className='text-lg md:text-xl font-bold text-gray-800 whitespace-nowrap'>
-						h5Fivex
-					</span>
 				</div>
 
 				{/* Notification Bell */}
