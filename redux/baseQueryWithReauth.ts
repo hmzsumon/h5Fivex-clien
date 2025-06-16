@@ -8,11 +8,11 @@ import {
 import type { BaseQueryFn } from '@reduxjs/toolkit/query';
 import baseUrl from '@/config/baseUrl';
 
-const url = `${baseUrl}/api/v1`;
+// const url = `${baseUrl}/api/v1`;
 
 // ⚙️ Normal baseQuery with credentials (cookie auth)
 const baseQuery = fetchBaseQuery({
-	baseUrl: url,
+	baseUrl, // ✅ Use baseUrl from config
 	credentials: 'include', // ✅ send cookies automatically
 });
 
