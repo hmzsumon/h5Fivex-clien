@@ -263,7 +263,7 @@ export default function DepositPage() {
 										<span className='text-blue-500 mr-1.5 mt-0.5'>•</span>
 										<span>
 											<span className='font-semibold'>Network:</span> {network}{' '}
-											only (TRC20 network)
+											only
 										</span>
 									</li>
 									<li className='flex items-start'>

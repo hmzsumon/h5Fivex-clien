@@ -393,7 +393,7 @@ export default function TodayTaskPage() {
 							VIP Tasks
 						</h1>
 						<button className='bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-1 rounded-full text-sm shadow flex items-center'>
-							<GiCash className='mr-1' /> ${deposit.toLocaleString()}
+							<GiCash className='mr-1' /> ${user?.m_balance.toLocaleString()}
 						</button>
 					</div>
 					<p className='text-sm text-gray-500 mt-2'>Earn commissions daily</p>

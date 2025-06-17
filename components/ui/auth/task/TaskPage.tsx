@@ -26,7 +26,7 @@ export default function TaskPage() {
 	const rawTiers = [
 		{
 			level: 'VIP1',
-			commission: '1.80%-2.20%',
+			commission: '2%-2.20%',
 			orders: 3,
 			min: 30,
 			max: 500,

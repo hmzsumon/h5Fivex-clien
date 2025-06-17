@@ -4,7 +4,8 @@ export const notificationApi = apiSlice.injectEndpoints({
 	endpoints: (builder) => ({
 		// get notifications
 		getNotifications: builder.query<any, void>({
-			query: () => '/admin/notifications',
+			query: () => '/my-unread-notifications',
+			providesTags: ['Notifications'],
 		}),
 
 		// update notification isRead true
@@ -14,8 +15,27 @@ export const notificationApi = apiSlice.injectEndpoints({
 				method: 'PUT',
 			}),
 		}),
+
+		// get my-unread-notifications-count
+		getUnreadNotificationsCount: builder.query<any, void>({
+			query: () => '/my-unread-notifications-count',
+			providesTags: ['Notifications'],
+		}),
+
+		// /update-notification/:id
+		updateNotificationStatus: builder.mutation<any, { id: string }>({
+			query: ({ id }) => ({
+				url: `/update-notification/${id}`,
+				method: 'PUT',
+			}),
+			invalidatesTags: ['Notifications'],
+		}),
 	}),
 });
 
-export const { useGetNotificationsQuery, useUpdateNotificationMutation } =
-	notificationApi;
+export const {
+	useGetNotificationsQuery,
+	useUpdateNotificationMutation,
+	useGetUnreadNotificationsCountQuery,
+	useUpdateNotificationStatusMutation,
+} = notificationApi;

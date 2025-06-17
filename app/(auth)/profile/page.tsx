@@ -37,7 +37,6 @@ const ProfilePage = () => {
 
 	const { data, isLoading } = useMyAssetDetailsQuery(undefined);
 	const { assetData } = data || {};
-	console.log('Asset Data:', assetData);
 
 	const { user } = useSelector((state: any) => state.auth);
 
