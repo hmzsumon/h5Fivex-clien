@@ -31,6 +31,7 @@ const ProfilePage = () => {
 
 	// Function to handle app download
 	const handleDownload = () => {
+		console.log('Download started');
 		// Trigger download action
 		const link = document.createElement('a');
 		link.href = '/h5Fivex.apk';
@@ -286,7 +287,7 @@ const ProfilePage = () => {
 							<div className='grid grid-cols-1 md:grid-cols-2 gap-4 '>
 								<div className='space-y-3'>
 									<button
-										onAuxClick={handleDownload}
+										onClick={handleDownload}
 										className='flex items-center justify-between w-full p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition'
 									>
 										<div className='flex items-center'>
