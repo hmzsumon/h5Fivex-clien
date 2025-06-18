@@ -530,8 +530,7 @@ export default function WithdrawPage() {
 											Network Fees
 										</p>
 										<p className='text-xs text-gray-600'>
-											${withdrawFee} flat fee applies to all {network}{' '}
-											transactions
+											5% flat fee applies to all {network} transactions
 										</p>
 									</div>
 								</div>
@@ -545,7 +544,8 @@ export default function WithdrawPage() {
 											Processing Time
 										</p>
 										<p className='text-xs text-gray-600'>
-											Typically completes within 0-72
+											Typically completes within 0-72 hours, depending on
+											network.
 										</p>
 									</div>
 								</div>
