@@ -25,15 +25,6 @@ function HomeFooter() {
 					>
 						<FaTelegramPlane />
 					</a>
-					<a
-						href='https://t.me/h5fivex'
-						target=''
-						rel='noopener noreferrer'
-						aria-label='Join us on WhatsApp'
-						className='text-3xl text-green-500 hover:text-green-700 transform hover:scale-110 transition-all'
-					>
-						<FaWhatsapp />
-					</a>
 				</div>
 
 				{/* Footer Content */}

@@ -7,12 +7,15 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSelector } from 'react-redux';
 import { useGetTransactionsQuery } from '@/redux/features/transactions/transactionApi';
+import { formatDate } from '@/lib/functions';
 
 type Transaction = {
-	id: string;
+	_id: string;
 	type: 'deposit' | 'withdrawal';
 	amount: number;
 	date: Date;
+	createdAt: Date;
+	updatedAt: Date;
 	status: string;
 	description?: string;
 	purpose?: string;
@@ -35,15 +38,6 @@ export default function WalletHome() {
 	const filteredTransactions = transactions.filter(
 		(tx) => filter === 'all' || tx.purpose === filter
 	);
-
-	const formatDate = (date: Date) => {
-		return new Intl.DateTimeFormat('en-US', {
-			month: 'short',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit',
-		}).format(date);
-	};
 
 	return (
 		<div className='min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4 md:p-8'>
@@ -141,7 +135,7 @@ export default function WalletHome() {
 					) : (
 						<ul className='divide-y divide-gray-200'>
 							{filteredTransactions.map((tx) => (
-								<li key={tx.id} className='p-4 hover:bg-gray-50'>
+								<li key={tx._id} className='p-4 hover:bg-gray-50'>
 									<div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3'>
 										<div className='flex items-center space-x-3'>
 											<div
@@ -163,7 +157,7 @@ export default function WalletHome() {
 														(tx.type === 'deposit' ? 'Deposit' : 'Withdrawal')}
 												</p>
 												<p className='text-sm text-gray-500'>
-													{formatDate(tx.date)}
+													{formatDate(tx.createdAt)}
 												</p>
 											</div>
 										</div>

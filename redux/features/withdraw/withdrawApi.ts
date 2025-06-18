@@ -5,7 +5,7 @@ export const withdrawApi = apiSlice.injectEndpoints({
 		// create new withdraw request
 		createWithdrawRequest: builder.mutation<any, any>({
 			query: (body) => ({
-				url: `/new/withdraw`,
+				url: `/new-withdraw-request`,
 				method: 'POST',
 				body,
 			}),

@@ -16,6 +16,7 @@ import {
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { useGetMyRankSummaryQuery } from '@/redux/features/rank/rankApi';
+import { formatBalance } from '@/lib/functions';
 
 interface RewardTier {
 	id: number;
@@ -108,7 +109,7 @@ const RankRewardPage = () => {
 	const stats = {
 		directReferrals: rankData?.directMembers || 0,
 		directActiveMembers: rankData?.activeMembers || 0,
-		totalEarned: rankData?.totalEarnings || 0,
+		totalEarned: formatBalance(rankData?.totalEarnings || 0),
 		teamDeposits: rankData?.teamDeposits || 0,
 		nextReward: 'Achiever (15/20)',
 	};

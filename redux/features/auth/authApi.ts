@@ -401,6 +401,15 @@ export const authApi = apiSlice.injectEndpoints({
 				body,
 			}),
 		}),
+
+		// change-password
+		changePassword: builder.mutation<any, any>({
+			query: (body) => ({
+				url: '/change-password',
+				method: 'POST',
+				body,
+			}),
+		}),
 	}),
 });
 
@@ -447,4 +456,5 @@ export const {
 	useMyAssetDetailsQuery,
 	useVerifyOtpForForgotPasswordMutation,
 	useResetForgotPasswordMutation,
+	useChangePasswordMutation,
 } = authApi;

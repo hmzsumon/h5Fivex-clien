@@ -8,10 +8,13 @@ import PulseLoader from 'react-spinners/PulseLoader';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { useResetForgotPasswordMutation } from '@/redux/features/auth/authApi';
+import { useDispatch } from 'react-redux';
+import { setForgotPasswordState } from '@/redux/features/auth/authSlice';
 
 export default function ResetPasswordPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
+	const dispatch = useDispatch();
 
 	const [email, setEmail] = useState<string | null>(null);
 	useEffect(() => {
@@ -74,6 +77,12 @@ export default function ResetPasswordPage() {
 			setErrors({ password: (resetError as fetchBaseQueryError).data.error });
 		} else if (isResetSuccess) {
 			toast.success('Password reset successfully!');
+			dispatch(
+				setForgotPasswordState({
+					isForgotPassword: false,
+					emailForgotPassword: '',
+				})
+			);
 			router.push('/login');
 		}
 	}, [isResetError, isResetSuccess, resetError, router]);

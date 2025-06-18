@@ -1,55 +1,200 @@
 'use client';
 
-import { useState } from 'react';
-import {
-	FiArrowLeft,
-	FiCopy,
-	FiCheck,
-	FiMail,
-	FiAlertCircle,
-	FiInfo,
-} from 'react-icons/fi';
+import { Toaster, toast } from 'react-hot-toast';
+import { fetchBaseQueryError } from '@/redux/services/helpers';
+import { useEffect, useState } from 'react';
+import { FiArrowLeft, FiMail, FiAlertCircle, FiInfo } from 'react-icons/fi';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useSelector } from 'react-redux';
+import {
+	useResendVerificationEmailMutation,
+	useVerifyOtpForForgotPasswordMutation,
+} from '@/redux/features/auth/authApi';
+import { useCreateWithdrawRequestMutation } from '@/redux/features/withdraw/withdrawApi';
 
 export default function WithdrawPage() {
+	const { user } = useSelector((state: any) => state.auth);
+
+	// call useCreateWithdrawRequestMutation
+	const [
+		createWithdrawRequest,
+		{
+			isLoading: isCreateLoading,
+			isError: isCreateError,
+			isSuccess: isCreateSuccess,
+			error: createApiError,
+		},
+	] = useCreateWithdrawRequestMutation();
+
+	// Verify OTP for withdrawal
+	const [
+		verifyOtpForForgotPassword,
+		{ isLoading, isError, isSuccess, error: apiError },
+	] = useVerifyOtpForForgotPasswordMutation();
+
+	useEffect(() => {
+		if (isError) {
+			console.error('Error verifying email:', apiError);
+			toast.error((apiError as fetchBaseQueryError).data.error);
+			setError((apiError as fetchBaseQueryError).data.error);
+		} else if (isSuccess) {
+		}
+	}, [isError, isSuccess, apiError]);
+
+	//resend otp
+	const [
+		resendVerificationEmail,
+		{
+			isLoading: isResendLoading,
+			isError: isResendError,
+			isSuccess: isResendSuccess,
+			error: resendApiError,
+		},
+	] = useResendVerificationEmailMutation();
+
 	const [amount, setAmount] = useState<string>('');
+	const [amountError, setAmountError] = useState(false);
+	const [amountErrorMessage, setAmountErrorMessage] = useState('');
+	const [withdrawFee, setWithdrawFee] = useState(0);
+	const [actualReceipt, setActualReceipt] = useState(0);
+	const [error, setError] = useState('');
 	const [walletAddress, setWalletAddress] = useState<string>('');
 	const [network, setNetwork] = useState<'TRC20' | 'BEP20'>('TRC20');
 	const [otp, setOtp] = useState<string>('');
 	const [step, setStep] = useState<'form' | 'verify'>('form');
-	const [copied, setCopied] = useState(false);
 
 	const minWithdraw = 30;
-	const fee = 5; // $1 withdrawal fee
+
+	const availableBalance = user?.m_balance - 3;
+
+	const handleWithdrawAddressChange = (value: string) => {
+		setWalletAddress(value);
+	};
+
+	const handleAmountChange = (value: string) => {
+		const parsed = parseFloat(value);
+		setAmount(value);
+
+		if (!value || parsed < 30) {
+			setAmountError(true);
+			setAmountErrorMessage('Minimum withdrawal amount is 30 USDT');
+			return;
+		}
+
+		if (parsed > availableBalance) {
+			setAmountError(true);
+			setAmountErrorMessage('Amount exceeds your available balance');
+			return;
+		}
+
+		if (parsed <= 0) {
+			setAmountError(true);
+			setAmountErrorMessage('Amount must be greater than zero');
+			return;
+		}
+
+		setAmountError(false);
+		setAmountErrorMessage('');
+		const fee = parsed * 0.05; // 5% fee
+		const receipt = parsed - fee;
+		setWithdrawFee(fee);
+		setActualReceipt(receipt);
+	};
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!amount || parseFloat(amount) < minWithdraw) {
-			alert(`Minimum withdrawal amount is $${minWithdraw}`);
+			toast.error(
+				`Minimum withdrawal amount is $${minWithdraw}. Please enter a valid amount.`
+			);
 			return;
 		}
 		if (!walletAddress) {
-			alert('Please enter your wallet address');
+			toast.error('Please enter your wallet address');
 			return;
 		}
-		setStep('verify');
+		resendVerificationEmail({ email: user?.email });
 	};
+
+	//useEffect for handling resend OTP response
+	useEffect(() => {
+		if (isResendError) {
+			console.error('Error resending OTP:', resendApiError);
+			toast.error((resendApiError as fetchBaseQueryError).data?.error);
+			setError((resendApiError as fetchBaseQueryError).data?.error);
+		} else if (isResendSuccess) {
+			toast.success('OTP resent successfully! Please check your email.');
+			setStep('verify');
+		}
+	}, [isResendError, isResendSuccess, resendApiError]);
 
 	const handleVerify = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!otp) {
-			alert('Please enter OTP');
+			toast.error('Please enter the OTP code');
 			return;
 		}
-		alert(
-			`Withdrawal request confirmed! $${amount} to ${walletAddress} (${network})`
-		);
-		setAmount('');
-		setWalletAddress('');
-		setOtp('');
-		setStep('form');
+
+		const otpData = {
+			email: user?.email,
+			otp: otp,
+		};
+		verifyOtpForForgotPassword(otpData).unwrap();
 	};
+
+	// handle request withdraw
+	const handleRequestWithdraw = () => {
+		if (!amount || parseFloat(amount) < minWithdraw) {
+			toast.error(`Minimum withdrawal amount is $${minWithdraw}`);
+			return;
+		}
+		if (!walletAddress) {
+			toast.error('Please enter your wallet address');
+			return;
+		}
+		if (user?.is_withdraw_block) {
+			toast.error('You must complete at least 9 tasks to withdraw');
+			return;
+		}
+		const withdrawData = {
+			amount: parseFloat(amount),
+			withdrawAddress: walletAddress,
+			network,
+			withdrawFee,
+			receiptAmount: actualReceipt,
+		};
+		console.log('Requesting withdrawal with data:', withdrawData);
+		createWithdrawRequest(withdrawData).unwrap();
+	};
+
+	useEffect(() => {
+		if (isError) {
+			console.error('Error verifying email:', apiError);
+			toast.error((apiError as fetchBaseQueryError).data.error);
+			setError((apiError as fetchBaseQueryError).data.error);
+		} else if (isSuccess) {
+			handleRequestWithdraw();
+			setAmount('');
+			setWalletAddress('');
+			setOtp('');
+			setStep('form');
+		}
+	}, [isError, isSuccess, apiError]);
+
+	useEffect(() => {
+		if (isCreateError) {
+			console.error('Error creating withdraw request:', createApiError);
+			toast.error((createApiError as fetchBaseQueryError).data.error);
+			setError((createApiError as fetchBaseQueryError).data.error);
+		} else if (isCreateSuccess) {
+			toast.success('Withdrawal request created successfully!');
+			setAmount('');
+			setWalletAddress('');
+			setOtp('');
+			setStep('form');
+		}
+	}, [isCreateError, isCreateSuccess, createApiError]);
 
 	return (
 		<div className='min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 p-4 md:p-8 flex items-center justify-center'>
@@ -82,7 +227,7 @@ export default function WithdrawPage() {
 									Min: {minWithdraw}$
 								</span>
 								<span className='text-sm bg-white/10 px-3 py-1 rounded-full'>
-									Fee: {fee}%
+									Fee: 5%
 								</span>
 							</div>
 						</div>
@@ -110,7 +255,7 @@ export default function WithdrawPage() {
 										<input
 											type='number'
 											value={amount}
-											onChange={(e) => setAmount(e.target.value)}
+											onChange={(e) => handleAmountChange(e.target.value)}
 											placeholder={`${minWithdraw} or more`}
 											className='w-full pl-10 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50/50 transition'
 											step='0.01'
@@ -172,7 +317,9 @@ export default function WithdrawPage() {
 									<input
 										type='text'
 										value={walletAddress}
-										onChange={(e) => setWalletAddress(e.target.value)}
+										onChange={(e) =>
+											handleWithdrawAddressChange(e.target.value)
+										}
 										placeholder={`Paste ${network} address`}
 										className='w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono bg-gray-50/50 transition'
 										required
@@ -184,11 +331,52 @@ export default function WithdrawPage() {
 									whileHover={{ scale: 1.02 }}
 									whileTap={{ scale: 0.98 }}
 									type='submit'
-									disabled={true}
+									disabled={
+										!amount ||
+										amountError ||
+										!walletAddress ||
+										user?.is_withdraw_block ||
+										!availableBalance ||
+										isResendLoading
+									}
 									className={`w-full py-4 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed `}
 								>
-									Request Withdrawal
+									{isResendLoading ? (
+										<span className='flex items-center justify-center'>
+											<svg
+												className='animate-spin h-5 w-5 mr-3 text-white'
+												xmlns='http://www.w3.org/2000/svg'
+												fill='none'
+												viewBox='0 0 24 24'
+											>
+												<circle
+													className='opacity-25'
+													cx='12'
+													cy='12'
+													r='10'
+													stroke='currentColor'
+													strokeWidth='4'
+												></circle>
+												<path
+													className='opacity-75'
+													fill='currentColor'
+													d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2.293-6.707A8.003 8.003 0 0012 20v4c-6.627 0-12-5.373-12-12h4a8.003 8.003 0 006.707-2.293l-2.414-2.414z'
+												></path>
+											</svg>
+											Requesting...
+										</span>
+									) : (
+										'Request Withdrawal'
+									)}
 								</motion.button>
+								{user?.is_withdraw_block && (
+									<p className='text-red-500 text-xs  flex items-center'>
+										<FiAlertCircle className='mr-1' />
+										You must complete at least 9 tasks to withdraw
+									</p>
+								)}
+
+								{/* Important Notes */}
 							</motion.form>
 						) : (
 							/* OTP Verification Step */
@@ -221,19 +409,62 @@ export default function WithdrawPage() {
 									<label className='block text-sm font-medium text-gray-700 mb-2'>
 										OTP Code
 									</label>
+
 									<div className='flex space-x-3'>
 										{[...Array(6)].map((_, i) => (
 											<motion.input
 												key={i}
+												id={`otp-${i}`}
 												type='text'
+												inputMode='numeric'
+												pattern='[0-9]*'
+												autoComplete='off'
 												maxLength={1}
 												value={otp[i] || ''}
 												onChange={(e) => {
+													const val = e.target.value.replace(/\D/g, '');
+													if (!val) return;
+
 													const newOtp = otp.split('');
-													newOtp[i] = e.target.value;
+													newOtp[i] = val[0];
 													setOtp(newOtp.join('').slice(0, 6));
+
+													// Focus next input
+													const next = document.getElementById(`otp-${i + 1}`);
+													if (next) (next as HTMLInputElement).focus();
 												}}
-												className='w-full h-14 text-center text-2xl font-bold border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50/50'
+												onKeyDown={(e) => {
+													if (e.key === 'Backspace' && !otp[i] && i > 0) {
+														const prev = document.getElementById(
+															`otp-${i - 1}`
+														);
+														if (prev) (prev as HTMLInputElement).focus();
+													}
+												}}
+												onPaste={(e) => {
+													e.preventDefault();
+													const pasted = e.clipboardData
+														.getData('text')
+														.replace(/\D/g, '');
+													if (!pasted) return;
+
+													const sliced = pasted.slice(0, 6);
+													setOtp(sliced);
+
+													setTimeout(() => {
+														for (let j = 0; j < sliced.length; j++) {
+															const input = document.getElementById(
+																`otp-${j}`
+															) as HTMLInputElement;
+															if (input) input.value = sliced[j];
+														}
+														const last = document.getElementById(
+															`otp-${Math.min(5, sliced.length - 1)}`
+														);
+														if (last) last.focus();
+													}, 0);
+												}}
+												className='w-12 h-14 text-center text-2xl font-bold border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50/50'
 												required
 												whileFocus={{ scale: 1.05 }}
 											/>
@@ -245,7 +476,8 @@ export default function WithdrawPage() {
 									whileHover={{ scale: 1.02 }}
 									whileTap={{ scale: 0.98 }}
 									type='submit'
-									className='w-full py-4 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-indigo-500/20'
+									disabled={!otp || otp.length < 6}
+									className='w-full py-4 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed'
 								>
 									Confirm Withdrawal
 								</motion.button>
@@ -298,7 +530,8 @@ export default function WithdrawPage() {
 											Network Fees
 										</p>
 										<p className='text-xs text-gray-600'>
-											${fee} flat fee applies to all {network} transactions
+											${withdrawFee} flat fee applies to all {network}{' '}
+											transactions
 										</p>
 									</div>
 								</div>
@@ -312,7 +545,7 @@ export default function WithdrawPage() {
 											Processing Time
 										</p>
 										<p className='text-xs text-gray-600'>
-											Typically completes within 5-30 minutes
+											Typically completes within 0-72
 										</p>
 									</div>
 								</div>

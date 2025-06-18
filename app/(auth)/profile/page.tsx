@@ -1,31 +1,25 @@
 'use client';
-
-import React, { useState, useRef } from 'react';
+import { Toaster, toast } from 'react-hot-toast';
+import { fetchBaseQueryError } from '@/redux/services/helpers';
+import React, { useState, useRef, use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-	FiInfo,
 	FiDollarSign,
-	FiCreditCard,
 	FiClock,
 	FiPieChart,
 	FiTrendingUp,
 	FiUsers,
-	FiMessageSquare,
-	FiSettings,
 	FiLogOut,
 	FiChevronRight,
 	FiCheckCircle,
-	FiEdit,
-	FiUpload,
-	FiImage,
 	FiLock,
-	FiKey,
 	FiDownload,
 	FiSmartphone,
 	FiCopy,
 	FiCheck,
 } from 'react-icons/fi';
 import {
+	useChangePasswordMutation,
 	useLogoutUserMutation,
 	useMyAssetDetailsQuery,
 } from '@/redux/features/auth/authApi';
@@ -35,12 +29,33 @@ import { useSelector } from 'react-redux';
 const ProfilePage = () => {
 	const router = useRouter();
 
+	// Function to handle app download
+	const handleDownload = () => {
+		// Trigger download action
+		const link = document.createElement('a');
+		link.href = '/h5Fivex.apk';
+		link.download = 'h5Fivex.apk';
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+	};
+
 	const { data, isLoading } = useMyAssetDetailsQuery(undefined);
 	const { assetData } = data || {};
 
 	const { user } = useSelector((state: any) => state.auth);
 
 	const [logoutUser] = useLogoutUserMutation(); // Assuming you have a logout mutation defined in your authApi
+
+	const [
+		changePassword,
+		{
+			isLoading: isChangingPassword,
+			isSuccess: isChangePasswordSuccess,
+			isError: isChangePasswordError,
+			error: changePasswordError,
+		},
+	] = useChangePasswordMutation();
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [activeTab, setActiveTab] = useState('asset-details');
@@ -70,38 +85,6 @@ const ProfilePage = () => {
 		vipChannel: user?.vipTier || 'VIP 1',
 	};
 
-	const transactionHistory = [
-		{
-			id: 1,
-			type: 'Deposit',
-			amount: 100.0,
-			date: '2025-05-10',
-			status: 'Completed',
-			txId: '0x1234567890abcdef',
-		},
-		{
-			id: 2,
-			type: 'Withdrawal',
-			amount: -50.0,
-			date: '2025-05-08',
-			status: 'Completed',
-			txId: '0x9876543210fedcba',
-		},
-		{
-			id: 3,
-			type: 'Commission',
-			amount: 12.5,
-			date: '2025-05-07',
-			status: 'Completed',
-			txId: '0xabcdef1234567890',
-		},
-	];
-
-	const appDownloadLinks = {
-		android: 'https://play.google.com/store/apps/details?id=com.example.app',
-		ios: 'https://apps.apple.com/us/app/example-app/id1234567890',
-	};
-
 	// Unified copy handler with item tracking
 	const handleCopy = (text: string, itemKey: string) => {
 		navigator.clipboard.writeText(text);
@@ -109,19 +92,6 @@ const ProfilePage = () => {
 		setTimeout(() => {
 			setCopiedItems((prev) => ({ ...prev, [itemKey]: false }));
 		}, 2000);
-	};
-
-	const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (file) {
-			const reader = new FileReader();
-			reader.onload = (event) => {
-				if (event.target?.result) {
-					setProfileImage(event.target.result as string);
-				}
-			};
-			reader.readAsDataURL(file);
-		}
 	};
 
 	const handleLogout = () => {
@@ -145,11 +115,23 @@ const ProfilePage = () => {
 
 	const handlePasswordChange = (e: React.FormEvent) => {
 		e.preventDefault();
-		// Add password change logic here
-		setCurrentPassword('');
-		setNewPassword('');
-		setConfirmPassword('');
+		const data = {
+			oldPassword: currentPassword,
+			newPassword,
+		};
+		changePassword(data).unwrap();
 	};
+
+	useEffect(() => {
+		if (isChangePasswordError) {
+			toast.error((changePasswordError as fetchBaseQueryError).data.error);
+		} else if (isChangePasswordSuccess) {
+			toast.success('Password changed successfully!');
+			setCurrentPassword('');
+			setNewPassword('');
+			setConfirmPassword('');
+		}
+	}, [isChangePasswordError, isChangePasswordSuccess, changePasswordError]);
 
 	// Format transaction IDs for display
 	const formatTxId = (txId: string) => {
@@ -266,7 +248,12 @@ const ProfilePage = () => {
 							<button
 								type='submit'
 								className='w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed'
-								disabled={true}
+								disabled={
+									isChangingPassword ||
+									!currentPassword ||
+									!newPassword ||
+									!confirmPassword
+								}
 							>
 								Update Password
 							</button>
@@ -298,11 +285,9 @@ const ProfilePage = () => {
 
 							<div className='grid grid-cols-1 md:grid-cols-2 gap-4 '>
 								<div className='space-y-3'>
-									<a
-										href={appDownloadLinks.android}
-										target='_blank'
-										rel='noopener noreferrer'
-										className='flex items-center justify-between p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition'
+									<button
+										onAuxClick={handleDownload}
+										className='flex items-center justify-between w-full p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition'
 									>
 										<div className='flex items-center'>
 											<div className='bg-white/10 p-1.5 rounded mr-3'>
@@ -314,7 +299,7 @@ const ProfilePage = () => {
 											</div>
 										</div>
 										<FiDownload className='text-white' />
-									</a>
+									</button>
 								</div>
 							</div>
 						</div>

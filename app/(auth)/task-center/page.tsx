@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { useGetTaskCenterDataQuery } from '@/redux/features/rank/rankApi';
+import { formatBalance } from '@/lib/functions';
 
 interface TaskLevel {
 	id: number;
@@ -115,7 +116,7 @@ const TaskCenterPage = () => {
 		generation2: taskCenterData?.level_2Members || 0,
 		generation3: taskCenterData?.level_3Members || 0,
 
-		totalEarned: taskCenterData?.totalEarnings || 0,
+		totalEarned: formatBalance(taskCenterData?.totalEarnings || 0),
 	};
 
 	const handleClaimBonus = (id: number) => {

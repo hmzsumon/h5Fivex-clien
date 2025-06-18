@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Toaster, toast } from 'react-hot-toast';
 import { useSelector } from 'react-redux';
 import { useGetInviteDataQuery } from '@/redux/features/auth/authApi';
+import { formatBalance } from '@/lib/functions';
 
 // Simplified type definitions
 type ShareOption = {
@@ -65,7 +66,7 @@ export default function InvitePage() {
 			color: 'bg-gradient-to-br from-cyan-200 to-cyan-300',
 		},
 		{
-			value: inviteData?.totalEarning || 0,
+			value: formatBalance(inviteData?.totalEarning || 0),
 			label: 'Total Earnings',
 			icon: <FiDollarSign className='text-sky-600' />,
 			color: 'bg-gradient-to-br from-sky-200 to-sky-300',
