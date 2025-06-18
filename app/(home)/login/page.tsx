@@ -10,7 +10,8 @@ import Link from 'next/link';
 import { useLoginUserMutation } from '@/redux/features/auth/authApi';
 import { fetchBaseQueryError } from '@/redux/services/helpers';
 import PulseLoader from 'react-spinners/PulseLoader';
-
+import { useDispatch } from 'react-redux';
+import { setForgotPasswordState } from '@/redux/features/auth/authSlice'; // Adjust the import path as necessary
 interface FormData {
 	email: string;
 	password: string;
@@ -18,6 +19,9 @@ interface FormData {
 
 export default function LoginPage() {
 	const router = useRouter();
+	const dispatch = useDispatch();
+
+	// Adjust the import path as necessary
 
 	const [loginUser, { isSuccess, isLoading, isError, error }] =
 		useLoginUserMutation(); // Assuming you have a login mutation defined in your authApi
@@ -162,6 +166,13 @@ export default function LoginPage() {
 						<Link
 							href='/verify-email'
 							className='text-indigo-600 hover:underline'
+							onClick={() =>
+								dispatch(
+									setForgotPasswordState({
+										isForgotPassword: true,
+									})
+								)
+							}
 						>
 							Forgot Password?
 						</Link>

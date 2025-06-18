@@ -5,6 +5,8 @@ const initialState = {
 	user: null,
 	token: null,
 	isAuthenticated: false,
+	isForgotPassword: false,
+	emailForgotPassword: '',
 };
 
 export const authSlice = createSlice({
@@ -28,8 +30,18 @@ export const authSlice = createSlice({
 			state.token = null;
 			state.isAuthenticated = false;
 		},
+		setForgotPasswordState: (state, action) => {
+			state.isForgotPassword = action.payload.isForgotPassword;
+			state.emailForgotPassword = action.payload.emailForgotPassword;
+		},
 	},
 });
 
-export const { setBtnLogin, setUser, logoutUser, loadUser } = authSlice.actions;
+export const {
+	setBtnLogin,
+	setUser,
+	logoutUser,
+	loadUser,
+	setForgotPasswordState,
+} = authSlice.actions;
 export default authSlice.reducer;

@@ -1,17 +1,35 @@
 // app/verify-email/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { FiMail } from 'react-icons/fi';
 import { toast, Toaster } from 'react-hot-toast';
 import Link from 'next/link';
+import { useDispatch, useSelector } from 'react-redux';
+import { setForgotPasswordState } from '@/redux/features/auth/authSlice';
+import { useResendVerificationEmailMutation } from '@/redux/features/auth/authApi';
+import { fetchBaseQueryError } from '@/redux/services/helpers';
+import PulseLoader from 'react-spinners/PulseLoader';
 
 export default function VerifyEmailPage() {
 	const router = useRouter();
+	const dispatch = useDispatch();
+	const { isForgotPassword } = useSelector((state: any) => state.auth);
+	//resend otp
+	const [
+		resendVerificationEmail,
+		{
+			isLoading: isResendLoading,
+			isError: isResendError,
+			isSuccess: isResendSuccess,
+			error: resendApiError,
+		},
+	] = useResendVerificationEmailMutation();
+
 	const [email, setEmail] = useState('');
-	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState('');
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -19,17 +37,24 @@ export default function VerifyEmailPage() {
 			toast.error('Please enter your email');
 			return;
 		}
-		setIsLoading(true);
-		try {
-			await new Promise((resolve) => setTimeout(resolve, 1500)); // fake delay
-			toast.success('Verification email sent!');
-			router.push('/verify-otp'); // after verify, move to reset password
-		} catch (error) {
-			toast.error('Failed to send email. Try again!');
-		} finally {
-			setIsLoading(false);
+
+		resendVerificationEmail({ email });
+		if (isForgotPassword) {
+			dispatch(setForgotPasswordState({ emailForgotPassword: email }));
 		}
 	};
+
+	//useEffect
+	useEffect(() => {
+		if (isResendError) {
+			console.error('Error resending OTP:', resendApiError);
+			toast.error((resendApiError as fetchBaseQueryError).data.error);
+			setError((resendApiError as fetchBaseQueryError).data.error);
+		} else if (isResendSuccess) {
+			toast.success('OTP resent successfully! Please check your email.');
+			router.push('/verify-otp-password?email=' + email);
+		}
+	}, [isResendError, isResendSuccess, resendApiError]);
 
 	return (
 		<div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-cyan-100 via-sky-200 to-indigo-100 p-4'>
@@ -63,15 +88,16 @@ export default function VerifyEmailPage() {
 							placeholder='Email Address'
 							className='w-full pl-12 pr-4 py-3 rounded-2xl bg-white/80 border border-gray-300 focus:ring-2 focus:ring-blue-300 focus:border-blue-300'
 						/>
+						{error && <p className='text-red-500 text-xs mt-2'>{error}</p>}
 					</div>
 
 					{/* Submit button */}
 					<button
 						type='submit'
-						disabled={isLoading}
-						className='w-full bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-500 hover:from-indigo-600 hover:via-blue-600 hover:to-purple-600 py-3 rounded-2xl text-white font-bold shadow-md transition-transform transform hover:scale-105'
+						disabled={isResendLoading || !email}
+						className='w-full bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-500 hover:from-indigo-600 hover:via-blue-600 hover:to-purple-600 py-3 rounded-2xl text-white font-bold shadow-md transition-transform transform hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed'
 					>
-						{isLoading ? 'Sending...' : 'Send Verification'}
+						{isResendLoading ? 'Sending...' : 'Send Verification'}
 					</button>
 
 					{/* Back to login */}

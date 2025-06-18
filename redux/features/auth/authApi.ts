@@ -383,6 +383,24 @@ export const authApi = apiSlice.injectEndpoints({
 				method: 'GET',
 			}),
 		}),
+
+		// verify otp for forgot password
+		verifyOtpForForgotPassword: builder.mutation<any, any>({
+			query: (body) => ({
+				url: '/get-verify-otp-for-forgot-password',
+				method: 'POST',
+				body,
+			}),
+		}),
+
+		// reset forgot password
+		resetForgotPassword: builder.mutation<any, any>({
+			query: (body) => ({
+				url: '/reset-forgot-password',
+				method: 'POST',
+				body,
+			}),
+		}),
 	}),
 });
 
@@ -427,4 +445,6 @@ export const {
 	useGetMyTeamMembersQuery,
 	useUpdateUserVipTierMutation,
 	useMyAssetDetailsQuery,
+	useVerifyOtpForForgotPasswordMutation,
+	useResetForgotPasswordMutation,
 } = authApi;

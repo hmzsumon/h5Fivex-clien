@@ -1,16 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Toaster, toast } from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
+import { fetchBaseQueryError } from '@/redux/services/helpers';
+import PulseLoader from 'react-spinners/PulseLoader';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
+import { useResetForgotPasswordMutation } from '@/redux/features/auth/authApi';
 
 export default function ResetPasswordPage() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
+
+	const [email, setEmail] = useState<string | null>(null);
+	useEffect(() => {
+		const emailParam = searchParams.get('email'); // 🛑 Use 'email', not 'emai'
+		setEmail(emailParam);
+	}, [searchParams]);
+
+	const [
+		resetForgotPassword,
+		{
+			isLoading,
+			isSuccess: isResetSuccess,
+			isError: isResetError,
+			error: resetError,
+		},
+	] = useResetForgotPasswordMutation();
+
 	const [password, setPassword] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
-	const [isLoading, setIsLoading] = useState(false);
+
 	const [errors, setErrors] = useState<{ [key: string]: string }>({});
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -39,19 +60,23 @@ export default function ResetPasswordPage() {
 			return;
 		}
 
-		setIsLoading(true);
+		const data = {
+			email,
+			newPassword: password,
+		};
 
-		try {
-			// Simulating a backend request for password reset
-			await new Promise((resolve) => setTimeout(resolve, 1500));
-			toast.success('Password reset successful!');
-			router.push('/login');
-		} catch (error) {
-			toast.error('Failed to reset password!');
-		} finally {
-			setIsLoading(false);
-		}
+		resetForgotPassword(data).unwrap();
 	};
+
+	useEffect(() => {
+		if (isResetError) {
+			toast.error((resetError as fetchBaseQueryError).data.error);
+			setErrors({ password: (resetError as fetchBaseQueryError).data.error });
+		} else if (isResetSuccess) {
+			toast.success('Password reset successfully!');
+			router.push('/login');
+		}
+	}, [isResetError, isResetSuccess, resetError, router]);
 
 	return (
 		<div className='min-h-screen bg-gradient-to-br from-cyan-100 via-sky-200 to-indigo-100 flex items-center justify-center p-4'>

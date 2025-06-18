@@ -8,6 +8,8 @@ const PUBLIC_ROUTES = [
 	'/verify-otp',
 	'/forgot-password',
 	'/reset-password',
+	'/verify-email',
+	'/verify-otp-password',
 ];
 
 export function middleware(request: NextRequest) {
