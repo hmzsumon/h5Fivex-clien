@@ -1,6 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { use, useEffect, useState } from 'react';
+import { fetchBaseQueryError } from '@/redux/services/helpers';
+import PulseLoader from 'react-spinners/PulseLoader';
+import { toast } from 'react-hot-toast';
 import {
 	FiUsers,
 	FiUserPlus,
@@ -14,10 +17,13 @@ import {
 import { motion } from 'framer-motion';
 import { useGetTaskCenterDataQuery } from '@/redux/features/rank/rankApi';
 import { formatBalance } from '@/lib/functions';
+import { useClaimGenerationRewardMutation } from '@/redux/features/auth/authApi';
+import { useSelector } from 'react-redux';
 
 interface TaskLevel {
 	id: number;
 	level: string;
+	amount: number;
 	requirement: string;
 	bonus: string;
 	progress: number;
@@ -26,18 +32,31 @@ interface TaskLevel {
 	icon: React.ReactNode;
 	color: string;
 	gradient: string;
+	isClaimed: boolean;
 }
 
 const TaskCenterPage = () => {
+	const { user } = useSelector((state: any) => state.auth);
 	const { data, isLoading } = useGetTaskCenterDataQuery(undefined);
 	const { taskCenterData } = data || {};
-	console.log('Task Center Data:', taskCenterData);
+
 	const [claimedLevels, setClaimedLevels] = useState<number[]>([]);
+	useEffect(() => {
+		if (user?.generationRewardLevels) {
+			setClaimedLevels(user.generationRewardLevels);
+		}
+	}, [user]);
+
+	const [
+		claimGenerationReward,
+		{ isLoading: isClaiming, isSuccess: isClaimed, error: claimError },
+	] = useClaimGenerationRewardMutation();
 
 	const taskLevels: TaskLevel[] = [
 		{
 			id: 1,
 			level: 'Bronze Tier',
+			amount: 10,
 			requirement: '10 Active Members (3 Generations)',
 			bonus: '10 USDT',
 			progress: taskCenterData?.activeMembers || 0,
@@ -46,10 +65,12 @@ const TaskCenterPage = () => {
 			icon: <FiUsers className='text-amber-600' />,
 			color: 'border-amber-200',
 			gradient: 'from-amber-100 to-amber-50',
+			isClaimed: claimedLevels.includes(1),
 		},
 		{
 			id: 2,
 			level: 'Silver Tier',
+			amount: 20,
 			requirement: '20 Active Members (3 Generations)',
 			bonus: '20 USDT',
 			progress: taskCenterData?.activeMembers || 0,
@@ -58,10 +79,12 @@ const TaskCenterPage = () => {
 			icon: <FiUserPlus className='text-gray-400' />,
 			color: 'border-gray-200',
 			gradient: 'from-gray-100 to-gray-50',
+			isClaimed: claimedLevels.includes(2),
 		},
 		{
 			id: 3,
 			level: 'Gold Tier',
+			amount: 30,
 			requirement: '30 Active Members (3 Generations)',
 			bonus: '30 USDT',
 			progress: taskCenterData?.activeMembers || 0,
@@ -70,10 +93,12 @@ const TaskCenterPage = () => {
 			icon: <FiTrendingUp className='text-yellow-500' />,
 			color: 'border-yellow-200',
 			gradient: 'from-yellow-100 to-yellow-50',
+			isClaimed: claimedLevels.includes(3),
 		},
 		{
 			id: 4,
 			level: 'Platinum Tier',
+			amount: 40,
 			requirement: '40 Active Members (3 Generations)',
 			bonus: '40 USDT',
 			progress: taskCenterData?.activeMembers || 0,
@@ -82,10 +107,12 @@ const TaskCenterPage = () => {
 			icon: <FiZap className='text-blue-400' />,
 			color: 'border-blue-200',
 			gradient: 'from-blue-100 to-blue-50',
+			isClaimed: claimedLevels.includes(4),
 		},
 		{
 			id: 5,
 			level: 'Diamond Tier',
+			amount: 50,
 			requirement: '50 Active Members (3 Generations)',
 			bonus: '50 USDT',
 			progress: taskCenterData?.activeMembers || 0,
@@ -94,10 +121,12 @@ const TaskCenterPage = () => {
 			icon: <FiAward className='text-purple-500' />,
 			color: 'border-purple-200',
 			gradient: 'from-purple-100 to-purple-50',
+			isClaimed: claimedLevels.includes(5),
 		},
 		{
 			id: 6,
 			level: 'Elite Tier',
+			amount: 70,
 			requirement: '60 Active Members (3 Generations)',
 			bonus: '70 USDT',
 			progress: taskCenterData?.activeMembers || 0,
@@ -106,6 +135,7 @@ const TaskCenterPage = () => {
 			icon: <FiDollarSign className='text-pink-500' />,
 			color: 'border-pink-200',
 			gradient: 'from-pink-100 to-pink-50',
+			isClaimed: claimedLevels.includes(6),
 		},
 	];
 
@@ -121,12 +151,28 @@ const TaskCenterPage = () => {
 
 	const handleClaimBonus = (id: number) => {
 		setClaimedLevels([...claimedLevels, id]);
-		alert(
-			`Bonus for ${
-				taskLevels.find((t) => t.id === id)?.level
-			} claimed successfully!`
-		);
+		const level = taskLevels.find((l) => l.id === id);
+		if (!level) {
+			toast.error('Invalid task level');
+			return;
+		}
+
+		const data = {
+			tireName: level.level,
+			rewardAmount: level.amount,
+			level_id: id,
+		};
+		claimGenerationReward(data).unwrap();
 	};
+
+	useEffect(() => {
+		if (isClaimed) {
+			toast.success('Bonus claimed successfully!');
+		}
+		if (claimError) {
+			toast.error((claimError as fetchBaseQueryError).data?.error);
+		}
+	}, [isClaimed, claimError]);
 
 	return (
 		<div className='min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8'>
@@ -201,7 +247,8 @@ const TaskCenterPage = () => {
 								key={level.id}
 								level={level}
 								onClaim={handleClaimBonus}
-								isClaimed={claimedLevels.includes(level.id)}
+								isClaimed={level.isClaimed}
+								isClaiming={isClaiming}
 							/>
 						))}
 					</div>
@@ -371,12 +418,12 @@ const GlassStatCard: React.FC<{
 	);
 };
 
-// Premium Task Card
 const PremiumTaskCard: React.FC<{
 	level: TaskLevel;
 	onClaim: (id: number) => void;
 	isClaimed: boolean;
-}> = ({ level, onClaim, isClaimed }) => {
+	isClaiming: boolean;
+}> = ({ level, onClaim, isClaimed, isClaiming }) => {
 	const requiredMembers = parseInt(level.requirement.split(' ')[0]);
 	const progressPercentage = Math.min(
 		100,
@@ -456,7 +503,7 @@ const PremiumTaskCard: React.FC<{
 								? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:shadow-md'
 								: 'bg-gray-100 text-gray-500 cursor-not-allowed'
 						} transition-all`}
-						disabled={!isCompleted || isClaimed}
+						disabled={!isCompleted || isClaimed || isClaiming}
 					>
 						{isClaimed
 							? 'Claimed'

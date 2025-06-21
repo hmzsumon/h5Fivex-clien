@@ -410,6 +410,16 @@ export const authApi = apiSlice.injectEndpoints({
 				body,
 			}),
 		}),
+
+		//claim-generation-reward
+		claimGenerationReward: builder.mutation<any, any>({
+			query: (body) => ({
+				url: '/claim-generation-reward',
+				method: 'POST',
+				body,
+			}),
+			invalidatesTags: ['User'],
+		}),
 	}),
 });
 
@@ -457,4 +467,5 @@ export const {
 	useVerifyOtpForForgotPasswordMutation,
 	useResetForgotPasswordMutation,
 	useChangePasswordMutation,
+	useClaimGenerationRewardMutation,
 } = authApi;
