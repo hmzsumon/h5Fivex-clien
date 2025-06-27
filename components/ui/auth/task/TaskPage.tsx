@@ -93,7 +93,7 @@ export default function TaskPage() {
 
 	const vipTiers: VipTier[] = rawTiers.map((tier) => ({
 		...tier,
-		isTierUnlocked: user?.vipTier === tier.level,
+		isTierUnlocked: user?.vipTier === tier.level && user?.is_active,
 	}));
 
 	return (
