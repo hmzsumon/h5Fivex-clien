@@ -6,7 +6,7 @@ const CrispChat = () => {
 	useEffect(() => {
 		// Initialize Crisp
 		window.$crisp = [];
-		window.CRISP_WEBSITE_ID = '05caebaf-e6b0-41b4-97e8-ed0b3adc712b';
+		window.CRISP_WEBSITE_ID = 'aa69daa2-69c6-408a-b56e-111b58854e75';
 
 		// Inject CSS to reposition and style Crisp
 		const style = document.createElement('style');
